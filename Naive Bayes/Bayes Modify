@@ -63,6 +63,7 @@ Author:
     Erik
 Modify:
     2020/9/12
+    2020/9/14 词袋模型bagOfWord2Vec
 """
 
 
@@ -71,7 +72,8 @@ def setOfWords2Vec(vocabList, inputSet):
     returnVec = [0] * len(vocabList)   # 创建一个其中所含元素都为0的词汇表(向量)
     for word in inputSet:
         if word in vocabList:
-            returnVec[vocabList.index(word)] = 1
+            # returnVec[vocabList.index(word)] = 1
+            returnVec[vocabList.index(word)] += 1  # modify 词袋模型
         else:
             print("the word %s is not in my vocabList" % word)
     return returnVec
@@ -91,6 +93,7 @@ Author:
     Erik
 Modify:
     2020-9-13
+    2020-9-14
 """
 
 
@@ -98,10 +101,10 @@ def trainNBO(trainMatrix, trainCategory):
     numTrainDocs = len(trainMatrix)  # 计算训练的文档数目
     numWords = len(trainMatrix[0])  # 计算每篇文档的词条数
     pAbusive = sum(trainCategory)/float(numTrainDocs)  # 文档属于侮辱类的概率
-    p0Num = np.zeros(numWords)  # change to np.ones
-    p1Num = np.zeros(numWords)  # 创建numpy.zeros数组
-    p0Denom = 0.0  # change to 2
-    p1Denom = 0.0
+    p0Num = np.ones(numWords)  # change to np.ones
+    p1Num = np.ones(numWords)  # 创建numpy.zeros数组
+    p0Denom = 2.0  # change to 2
+    p1Denom = 2.0
     for i in range(numTrainDocs):
         if 1 == trainCategory[i]:  # 统计属于侮辱类的条件概率,p(w0|1),p(w1|1),...
             p1Num += trainMatrix[i]
@@ -109,9 +112,10 @@ def trainNBO(trainMatrix, trainCategory):
         else:  # 统计属于非侮辱类的条件概率,p(w0|0),p(w1|0),...
             p0Num += trainMatrix[i]
             p0Denom += sum(trainMatrix[i])
-    p1Vect = p1Num/p1Denom  # change to log
-    p0Vect = p0Num/p0Denom  # change to log
-    return p1Vect, p0Vect, pAbusive  # 返回属于侮辱类的条件概率数组，非侮辱类的条件概率数组,侮辱类的概率
+    p1Vect = np.log(p1Num/p1Denom)  # change to log
+    p0Vect = np.log(p0Num/p0Denom)  # change to log
+    # 分类错误bug - modify 2020-9-14
+    return p0Vect, p1Vect, pAbusive  # 返回属于侮辱类的条件概率数组，非侮辱类的条件概率数组,侮辱类的概率
 
 
 """
@@ -141,6 +145,7 @@ def classifyNB(vec2Classify, p0Vect, p1Vect, pClass1):
         return 0
 
 
+
 """
 函数说明：
     测试朴素贝叶斯分类器 - 封装测试朴素贝叶斯分类器的操作
@@ -152,56 +157,39 @@ Author:
     Erik
 Modify:
     2020-9-13
+    2020-9-14 debug - trainNBO 添加参数InputWord
 """
 
 
-def testingNB():
+def testingNB(InputWord):
     listPosts, listClasses = loadDataSet()  # 初始化词条和分类标签表
-    print("listPosts:\n", listPosts)  # 原始的词条列表
+    # print("listPosts:\n", listPosts)  # 原始的词条列表
     Vocablist = createVocabList(listPosts)  # 词汇表(单词不重复出现的集合),在setOfWords2Vec中用于将词条向量化
     Vocablist.sort()  # 排序后的文档向量化固定
-    print("Vocablist:\n", Vocablist)
+    # print("Vocablist:\n", Vocablist)
     trainMat = []  # trainMat - 向量化后的词条
     for postinDoc in listPosts:
         trainMat.append(setOfWords2Vec(Vocablist, postinDoc))
-    print("trainMat:\n", trainMat)
+    # print("trainMat:\n", trainMat)
     # p0V, p1V, pAb = trainNBO(np.array(trainMat), np.arrar(listClasses))
     p0V, p1V, pAb = trainNBO(trainMat, listClasses)
-    print("p0V:\n", p0V)
-    print("p1V:\n", p1V)
-    print("ClassVec:\n", listClasses)
-    print("pAb:\n", pAb)
-    # 测试
-    testEntry1 = ['love', 'my', 'dalmation']
-    thisDoc1 = np.array(setOfWords2Vec(Vocablist, testEntry1))
-    ret1 = classifyNB(thisDoc1, p0V, p1V, pAb)
-    if 0 == ret1:
-        print("this doc classifed as inabusive")
-    else:
-        print("this doc classifed as abusive")
-    testEntry2 = ['stupid', 'garbage']
-    thisDoc2 = np.array(setOfWords2Vec(Vocablist, testEntry2))
-    ret2 = classifyNB(thisDoc2, p0V, p1V,pAb)
-    if 0 == ret2:
-        print("this doc classifed as inabusive")
-    else:
-        print("this doc classifed as abusive")
-
-
-if __name__ == '__main__':
-    # listPosts, listClasses = loadDataSet()
-    # print("listPosts:\n", listPosts)  # 原始的词条列表
-    # Vocablist = createVocabList(listPosts)  # 词汇表(单词不重复出现的集合),在setOfWords2Vec中用于将词条向量化
-    # print("Vocablist:\n", Vocablist)
-    # trainMat = []  # trainMat - 向量化后的词条
-    # for postinDoc in listPosts:
-    #     trainMat.append(setOfWords2Vec(Vocablist, postinDoc))
-    #
-    # print("trainMat:\n", trainMat)
-    #
-    # p0V, p1V, pAb = trainNBO(trainMat, listClasses)
     # print("p0V:\n", p0V)
     # print("p1V:\n", p1V)
     # print("ClassVec:\n", listClasses)
     # print("pAb:\n", pAb)
-    testingNB()
+    # 测试
+    thisDoc = np.array(setOfWords2Vec(Vocablist, InputWord))
+    ret = classifyNB(thisDoc, p0V, p1V, pAb)
+    if 0 == ret:
+        print("%s is not abusive" % InputWord)
+    else:
+        print("%s is abusive" % InputWord)
+
+
+if __name__ == '__main__':
+    testWord1 = ['love', 'my', 'dalmation']
+    # testWord2 = ['stupid', 'garbage']
+    testWord3 = ['stupid', 'love', 'my', 'garbage']
+    testingNB(testWord1)
+    # testingNB(testWord3)
+    print("this is end")
