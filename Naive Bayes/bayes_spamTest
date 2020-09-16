@@ -49,8 +49,22 @@ def createVocablist(dataSet):
         vocabSet = vocabSet | set(doc)  # 取并集
     return list(vocabSet)  # 返回一个列表
 
-if __name__ == '__main__':
-    wordList = textParse(open('./email/spam/1.txt').read())
-    print(wordList)
 
+if __name__ == '__main__':
+    docList = []
+    classList = []
+    # 遍历文件
+    for i in range(1,25):
+        wordList = textParse(open('./email/spam/%d.txt' %i, 'r').read())
+        docList.append(wordList)  # 读取垃圾邮件转换为字符列表,并标记垃圾邮件(1)
+        classList.append(1)
+        wordList = textParse(open('./email/ham/%d.txt' %i, 'r').read())
+        docList.append(wordList)  # 读取非垃圾文件，转换为字符列表，并标记为非垃圾文件(0)
+        classList.append(0)
+        # wordList = textParse(open('./email/ham/%d.txt' %i, 'r').read())
+    myVocabList = createVocablist(docList)  # 去重
+    print(docList)  # 还未去重的训练集
+    print("-" * 100)
+    print(myVocabList)  # 去重后的训练集
+    print(classList)
     exit()
