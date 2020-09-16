@@ -1,0 +1,56 @@
+# -*- coding: UTF-8 -*-
+import numpy as np
+import re
+
+# 文本解析及垃圾邮件测试
+"""
+函数说明:
+    文档词袋模型 - 切分文本，基础筛选
+Parameters:
+    bigStr - 字符串句子
+Return:
+    ret或者[token.lower() for token in listOfTokens if len(token) > 2]
+    将文档小写化，筛选>2的字符串，返回一个词汇表
+Author:
+    Erik
+Modify Log:
+    2020-9-15
+"""
+
+
+def textParse(bigStr):
+    listOfTokens = re.split('\\W', bigStr)  # 将特殊符号(非字母，非数字)作为标志,进行字符串切分
+    ret = []  # 用于装词条
+    for token in listOfTokens:
+        if len(token) > 2:  # 基本筛选
+            ret.append(token.lower())
+    return ret
+    # return [token.lower() for token in listOfTokens if len(token) > 2]  # 方法2 返回一个列表
+
+
+"""
+函数说明：
+    创建词汇表函数 - 文本向量化step1
+Parameters:
+    dataSet - 词条数据集
+Return:
+    list(vocabSet) - 不含重复词条的列表
+Author:
+    Erik
+Modify Log:
+    2020-9-15
+"""
+
+
+# 创建词汇表
+def createVocablist(dataSet):
+    vocabSet = set([])  # 创建一个集合set
+    for doc in dataSet:
+        vocabSet = vocabSet | set(doc)  # 取并集
+    return list(vocabSet)  # 返回一个列表
+
+if __name__ == '__main__':
+    wordList = textParse(open('./email/spam/1.txt').read())
+    print(wordList)
+
+    exit()
