@@ -48,6 +48,43 @@ def createVocablist(dataSet):
     for doc in dataSet:
         vocabSet = vocabSet | set(doc)  # 取并集
     return list(vocabSet)  # 返回一个列表
+    
+
+"""
+函数说明：
+    朴素贝叶斯分类器 - 核心函数
+Parameters:
+    trainMatrix - 训练矩阵(词集模型或者词袋模型)，即setOfWord2Vec
+    trainCategory - 分类标签 listClass
+Return:
+    p0V - 非侮辱类文档条件概率
+    p1V - 侮辱类文档条件概率
+    pAbusive - 侮辱类文档概率
+Author:
+    Erik
+Log:
+    2020-9-16
+"""
+
+
+def trainNBO(trainMatrix, trainCategory):  # 传入训练矩阵,分类标签
+    numOfDocs = len(trainMatrix)  # 计算训练的文档数目
+    numWords = len(trainMatrix[0])  # 计算每篇文档的词条书
+    pAbusive = sum(trainCategory) / float(numOfDocs)  # 文档属于侮辱类的概率
+    p0num = np.ones(numWords)  # 创建Numpy.one 数组，拉普拉斯平滑
+    p1num = np.ones(numWords)
+    p0Deno = 2.0  # 分母初始化为2， 拉普拉斯平滑
+    p1Deno = 2.0
+    for i in range(numOfDocs):
+        if 1 == trainCategory[i]:  # 统计属于侮辱类的条件概率
+            p1num += trainMatrix[i]
+            p1Deno += sum(trainMatrix[i])
+        else:  # 统计属于非侮辱类的条件概率
+            p0num += trainMatrix[i]
+            p0Deno += sum(trainMatrix[i])
+    p1V = np.log(p1num/p1Deno)  # 防止下溢出，取log
+    p0V = np.log(p0num/p0Deno)
+    return p0V, p1V, pAbusive
 
 
 if __name__ == '__main__':
