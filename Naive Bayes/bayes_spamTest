@@ -48,7 +48,36 @@ def createVocablist(dataSet):
     for doc in dataSet:
         vocabSet = vocabSet | set(doc)  # 取并集
     return list(vocabSet)  # 返回一个列表
-    
+
+
+"""
+函数说明：
+    文本向量化 step2
+    根据去重的词汇表vocablist,将训练集inputset向量化，
+    将出现的单词标记为1
+Parameters:
+    vocablist - 去重后的词汇表(creatVocablist返回的词汇表)
+    inputset - 需要切分的词条列表
+Return:
+    returnVec - 向量化后的文档(词集模型)
+Author:
+    Erik
+Log:
+    2020-9-16
+"""
+
+
+def setOfWord2Vec(vocablist, inputset):
+    returnVec = [0] * len(vocablist)  # 初始化传出向量列表为0
+    for word in inputset:  # 遍历训练集
+        if word in vocablist:
+            returnVec[vocablist.index(word)] = 1  # 训练集出现的单词置1
+        else:
+            print("this word %s is not in my vocablist" % word)
+    return returnVec
+
+
+"""
 
 """
 函数说明：
