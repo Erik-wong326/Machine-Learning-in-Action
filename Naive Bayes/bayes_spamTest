@@ -78,8 +78,6 @@ def setOfWord2Vec(vocablist, inputset):
 
 
 """
-
-"""
 函数说明：
     朴素贝叶斯分类器 - 核心函数
 Parameters:
