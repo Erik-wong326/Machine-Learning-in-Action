@@ -79,6 +79,33 @@ def setOfWord2Vec(vocablist, inputset):
 
 """
 函数说明：
+    词袋模型
+    根据去重后的词汇表vocabList,将输入的文本inputSet向量化
+    构建词袋模型
+Parameters:
+    vocablist - 去重后的词汇表(creatVocablist返回的词汇表)
+    inputset - 需要切分的词条列表
+Return:
+    returnVec - 向量化后的文档(词袋模型)
+Author:
+    Erik
+Log:
+    2020-9-16
+"""
+
+
+def bagOfWord2Vec(vocabList, inputSet):
+    returnVec = [0] * len(vocabList)
+    for word in inputSet:
+        if word in vocabList:
+            returnVec[vocabList.index(word)] += 1
+        else:
+            print("this word %s is not in my vocablist" % word)
+    return returnVec
+
+
+"""
+函数说明：
     朴素贝叶斯分类器 - 核心函数
 Parameters:
     trainMatrix - 训练矩阵(词集模型或者词袋模型)，即setOfWord2Vec
