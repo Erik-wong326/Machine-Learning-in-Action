@@ -1,11 +1,13 @@
 # -*- coding: UTF-8 -*-
 import numpy as np
+import random
 import re
+import ctypes
 
 # 文本解析及垃圾邮件测试
 """
 函数说明:
-    文档词袋模型 - 切分文本，基础筛选
+    文档词袋模型 - 切分文本，基础筛选 
 Parameters:
     bigStr - 字符串句子
 Return:
@@ -18,6 +20,7 @@ Modify Log:
 """
 
 
+# 接收一个字符串，转换为字符串列表
 def textParse(bigStr):
     listOfTokens = re.split('\\W', bigStr)  # 将特殊符号(非字母，非数字)作为标志,进行字符串切分
     ret = []  # 用于装词条
@@ -124,7 +127,7 @@ Log:
 def trainNBO(trainMatrix, trainCategory):  # 传入训练矩阵,分类标签
     numOfDocs = len(trainMatrix)  # 计算训练的文档数目
     numWords = len(trainMatrix[0])  # 计算每篇文档的词条书
-    pAbusive = sum(trainCategory) / float(numOfDocs)  # 文档属于侮辱类的概率
+    pSpam = sum(trainCategory) / float(numOfDocs)  # 文档属于侮辱类的概率
     p0num = np.ones(numWords)  # 创建Numpy.one 数组，拉普拉斯平滑
     p1num = np.ones(numWords)
     p0Deno = 2.0  # 分母初始化为2， 拉普拉斯平滑
@@ -138,9 +141,9 @@ def trainNBO(trainMatrix, trainCategory):  # 传入训练矩阵,分类标签
             p0Deno += sum(trainMatrix[i])
     p1V = np.log(p1num/p1Deno)  # 防止下溢出，取log
     p0V = np.log(p0num/p0Deno)
-    return p0V, p1V, pAbusive
-    
-    
+    return p0V, p1V, pSpam
+
+
 """
 函数说明:
     朴素贝叶斯分类器分类函数
@@ -168,21 +171,63 @@ def classifyNB(vec2Classify, p0Vec, p1Vec, pClass1):
         return 0
 
 
+"""
+函数说明：
+    贝叶斯测试函数
+Parameters:
+    None
+Return:
+    None
+Author:
+    Erik
+Log:
+    2020-9-20
+"""
+
+
+def bayesTest():
+    docList = []  # 文档列表
+    classList = []  # 类别标签列表
+    fullText = []  # 备用，可用于对比
+    # step1 - 读取文档数据
+    for i in range(1, 26):
+        # 读取垃圾邮件文档
+        wordList = textParse(open('./email/spam/%d.txt' % i, 'r').read())
+        docList.append(wordList)
+        fullText.append(wordList)
+        classList.append(1)  # 标记垃圾邮件
+        # 读取非垃圾文件文档
+        wordList = textParse(open('./email/ham/%d.txt' % i, 'r').read())
+        docList.append(wordList)
+        classList.append(0)  # 标记非垃圾邮件
+        fullText.append(wordList)
+    vocabList = createVocablist(docList)  # 词汇表(单词不重复出现的集合),在setOfWords2Vec中用于将词条向量化
+    # vocabList.sort()  # 排序后的文档向量化固定
+    # step2 - 创建训练集和测试集,从50个样本中随机挑选40个作为训练集，10个作为测试集
+    trainSet = list(range(50))  # 定义存储trainSet下标(索引z)的列表
+    testSet = []  # 定义存储测试集下表的列表
+    for i in range(10):
+        randIndex = int(random.uniform(0, len(trainSet)))  # 抽取一个随机下标(索引)
+        testSet.append(trainSet[randIndex])  # 测试集中添加该下标的训练集
+        del (trainSet[randIndex])  # 删除已添加到测试集中的训练集的下标
+    # step3 - 训练集文档向量化 && 分类
+    trainMat = [];
+    trainClass = []  # 训练矩阵和训练集标签
+    # 遍历训练集，将训练集文档向量化
+    for docIndex in testSet:
+        trainMat.append(setOfWord2Vec(vocabList, docList[docIndex]))
+        trainClass.append(classList[docIndex])
+    p0V, p1V, pSpam = trainNBO(np.array(trainMat), np.array(trainClass))
+    # step 4 - 分类错误率
+    errorCount = 0
+    for docIndex in testSet:
+        wordVec = setOfWord2Vec(vocabList, docList[docIndex])
+        if classifyNB(np.array(wordVec), p0V, p1V, pSpam) != classList[docIndex]:
+            errorCount += 1
+            print("分类错误的测试集是:", docList[docIndex])
+    print("错误率: %.2f%%" % (float(errorCount) / len(testSet) * 100))
+
+
 if __name__ == '__main__':
-    docList = []
-    classList = []
-    # 遍历文件
-    for i in range(1,25):
-        wordList = textParse(open('./email/spam/%d.txt' %i, 'r').read())
-        docList.append(wordList)  # 读取垃圾邮件转换为字符列表,并标记垃圾邮件(1)
-        classList.append(1)
-        wordList = textParse(open('./email/ham/%d.txt' %i, 'r').read())
-        docList.append(wordList)  # 读取非垃圾文件，转换为字符列表，并标记为非垃圾文件(0)
-        classList.append(0)
-        # wordList = textParse(open('./email/ham/%d.txt' %i, 'r').read())
-    myVocabList = createVocablist(docList)  # 去重
-    print(docList)  # 还未去重的训练集
-    print("-" * 100)
-    print(myVocabList)  # 去重后的训练集
-    print(classList)
+    bayesTest()
     exit()
