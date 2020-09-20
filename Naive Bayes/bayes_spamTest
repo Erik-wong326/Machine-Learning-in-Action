@@ -2,7 +2,6 @@
 import numpy as np
 import random
 import re
-import ctypes
 
 # 文本解析及垃圾邮件测试
 """
