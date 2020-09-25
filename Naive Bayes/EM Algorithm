@@ -48,7 +48,7 @@ def em_single(priors, observations):
     EM算法
 Parameters:
     obs:观测序列
-    prior:
+    prior:参数theta初值(自定义)
     tol:函数结束阈值
     ites:最大迭代次数(上限)
 Returns:
