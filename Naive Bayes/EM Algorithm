@@ -5,7 +5,7 @@ import scipy.stats as stats
 # "二硬币模型"-EM算法
 """
 函数说明：
-    EM算法单词迭代：假设观测值服从二项分布
+    EM算法单次迭代：假设观测值服从二项分布
 Parameters:
     priors: 初始参数[thetaA, thetaB]
     observations:观测序列集[n*m],n个观测序列，每个观测序列有m个元素
