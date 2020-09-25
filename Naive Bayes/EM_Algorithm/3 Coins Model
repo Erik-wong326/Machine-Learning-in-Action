@@ -1,0 +1,83 @@
+# -*- coding: UTF-8 -*-
+import numpy as np
+import scipy.stats as stats
+import math
+
+# "3 coins model"-EM Algorithm
+
+"""
+函数说明：EM算法单次迭代：服从泊松分布
+Parameters:
+    priors: 初始参数[thetaA, thetaB, thetaC]
+    observations:观测序列集[n*m],n个观测序列，每个观测序列有m个元素
+Returns:
+    [new_theta_A, new_theta_B, new_theta_C]: 更新后的theta列表
+Author:
+    Erik
+Log:
+    2020-9-25
+"""
+
+
+def em_single(priors, observations):
+    # 初始化theta
+    theta_A = priors[0]
+    theta_B = priors[1]
+    theta_C = priors[2]
+    len_ob = len(observations)
+    # E step
+    mu_i = []
+    for ob in observations:
+        # 计算分母P(观测值|theta)
+        Z = theta_A * math.pow(theta_B, ob) * math.pow(1-theta_B, 1-ob) + \
+            (1-theta_A) * math.pow(theta_C, ob) * math.pow(1-theta_C, 1-ob)
+        # 掷硬币B出现观测值ob，则隐变量A为正面的后验概率=P(A|B)(或者说Z来自B的后验分布)
+        P_A_B = theta_A * math.pow(theta_B, ob) * math.pow(1-theta_B, 1-ob) / Z
+        # 掷硬币C出现观测值ob，则隐变量A为反面的后验概率(或者说Z来自C的后验分布)
+        P_A_C = 1 - P_A_B
+        mu_i.append(P_A_B)  # 将P_A_B令为mu_i，便于之后计算
+    # M step
+    new_theta_A = sum(mu_i)/len_ob  # ∑(i,n) mu_i / n
+    new_theta_B = sum(np.asarray(mu_i) * np.asarray(observations)) / sum(mu_i)  # ∑(i,n) mu_i*xi / ∑(i,n) mu_i
+    # ∑(i,n) (1-mu_i)*xi / ∑(i,n) (1-mu_i)
+    new_theta_C = sum((1-np.asarray(mu_i)) * np.asarray(observations)) / sum(1-np.asarray(mu_i))
+    return [new_theta_A, new_theta_B, new_theta_C]
+
+
+"""
+函数说明：
+    EM算法 - 3 coins Model
+Parameters:
+    obs:观测序列
+    prior:参数theta初值(自定义)
+    tol:函数结束阈值
+    ites:最大迭代次数(上限)
+Returns:
+    new_prior: 迭代后最优参数theta
+Author:
+    Erik
+Log:
+    2020-9-25
+"""
+
+
+def EM_al(observations, prior, tol=0, ites = 10000):
+    ite = 0  # 初始化迭代次数
+    while ite < ites:
+        new_prior = em_single(prior, observations)
+        delta_change = np.sum(np.abs(np.asarray(prior) - np.asarray(new_prior)))  #
+        if delta_change == tol:
+            print(ite, ":", new_prior)
+            break
+        else:
+            prior = new_prior
+            print(ite, ":", new_prior)
+            ite += 1
+    return new_prior
+
+
+if __name__ ==  "__main__":
+    # EM Algorithm - 3 Coins Model Test
+    observations = [1, 1, 0, 1, 0, 0, 1, 0, 1, 1]
+    EM_al(observations, [0.4, 0.6, 0.7])
+    exit()
