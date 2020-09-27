@@ -2,7 +2,6 @@
 import numpy as np
 import os
 import random
-import re
 import jieba
 
 
@@ -75,6 +74,78 @@ def TextProcessing(folder_path, test_size = 0.2):
     return cnt_words_list, train_data_list, test_data_list, train_class_list, test_class_list
 
 
+"""
+函数说明:
+    创造特殊词汇集
+Parameters:
+    word_file - 传入文件路径参数
+Return:
+    wordsSet - 特定词汇的词汇集
+    特定词汇 - 如 '一','其次','至于',这些对新闻分类无影响的介词、代词、连接词
+Author:
+    Erik
+Log:
+    2020-9-27
+"""
+
+
+def wordSet(word_file):
+    wordsSet = set()
+    with open(word_file, 'r', encoding='utf-8') as f:  # 打开文件
+        for line in f.readlines():
+            word = line.strip()  # strip将'\n'替换为'' 即去除换行符
+            if len(word)>0:
+                wordsSet.add(word)
+    return wordsSet
+
+
+"""
+函数说明:
+    特征词汇分类函数
+Parameters:
+    cnt_words_list - 词汇表(包含所有的词汇)
+    deleteN - 代表删除了词频最高的前N个单词(即循环初始值)
+    stopWordsSet - 特殊词汇集,分类筛选的标志
+Returns:
+    featureWords - 特征词列表(可用于新闻分类的词)
+Author:
+    Erik
+Log:
+    2020-9-27
+"""
+
+
+def wordsDict(cnt_words_list, deleteN, stopWordsSet = set()):
+    featureWords = []
+    n = 1
+    for t in range(deleteN, len(cnt_words_list)):
+        if n > 1000:  # featureWords的维度为1000
+            break
+        # 这个词不是数字，不是指定的结束语，1<单词长度<5，这个词即为特征词
+        len_word = len(cnt_words_list[t])
+        if not cnt_words_list[t].isdigit() and cnt_words_list[t] \
+                not in stopWordsSet and 1 < len(cnt_words_list[t]) < 5:
+            featureWords.append(cnt_words_list[t])
+        n += 1
+    return featureWords
+
+
+def Feature2Vec(train_data_list, test_data_list, featureWords):
+    def feature_in_text(text, featureWords):
+        textWords = set(text)
+        features = [1 if word in textWords else 0 for word in featureWords]
+        return features
+    train_feature_list = [feature_in_text(text, featureWords) for text in train_data_list]
+    test_feature_list = [feature_in_text(text, featureWords) for text in test_data_list]
+    return train_feature_list, test_feature_list
+    
+    
+def TextClassifer(train_feature_list, test_feature_list, train_class_list, test_class_list):
+    classifier = MultinomialNB().fit(train_feature_list, train_class_list)
+    test_accuracy = classifier.score(test_feature_list, test_class_list)
+    return test_accuracy
+    
+    
 if __name__ == '__main__':
     # 文本预处理
     folder_path = './SogouC/Sample'
