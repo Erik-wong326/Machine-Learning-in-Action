@@ -130,24 +130,84 @@ def wordsDict(cnt_words_list, deleteN, stopWordsSet = set()):
     return featureWords
 
 
+"""
+函数说明:
+    文本向量化函数,根据featureWords进行向量化
+Parameters:
+    train_data_list - 训练集列表
+    test_data_list - 测试集列表
+    featureWords - 特征词汇表(目标)
+    text - 训练集(或测试集)中的文档0,1,2,...
+Returns:
+    features - 训练集里每个索引(0,1,2,...)的特征向量
+    train_feature_list - 训练集特征向量列表
+    test_feature_list - 测试集特征向量列表
+Author:
+    Erik
+Log:
+    2020-9-27
+"""
+
+
 def Feature2Vec(train_data_list, test_data_list, featureWords):
     def feature_in_text(text, featureWords):
-        textWords = set(text)
-        features = [1 if word in textWords else 0 for word in featureWords]
+        textWords = set(text)  # 创建一个文本词汇集合
+        features = [1 if word in textWords else 0 for word in featureWords]  # 遍历传入的单词，属于特征词汇的置1否则置0
         return features
-    train_feature_list = [feature_in_text(text, featureWords) for text in train_data_list]
+    train_feature_list = [feature_in_text(text, featureWords) for text in train_data_list]  # 遍历训练集,调用函数进行向量化
     test_feature_list = [feature_in_text(text, featureWords) for text in test_data_list]
     return train_feature_list, test_feature_list
     
-    
+
+"""
+函数说明:
+    新闻文本分类器
+Parameters:
+    train_feature_list - 训练集特征向量列表
+    test_feature_list - 测试集特征向量列表
+    train_class_list - 训练集类别标签列表
+    test_class_list - 测试集类别标签列表
+Return:
+    test_accuracy - 测试准确度
+Author:
+    Erik
+Log:
+    2020-9-27
+"""
+
+
 def TextClassifer(train_feature_list, test_feature_list, train_class_list, test_class_list):
-    classifier = MultinomialNB().fit(train_feature_list, train_class_list)
+    classifier = MultinomialNB().fit(train_feature_list, train_class_list)  # 调用多项式分布的朴素贝叶斯分类器进行分类
     test_accuracy = classifier.score(test_feature_list, test_class_list)
     return test_accuracy
-    
-    
+
+        
 if __name__ == '__main__':
     # 文本预处理
     folder_path = './SogouC/Sample'
-    TextProcessing(folder_path)
+    cnt_words_list, train_data_list, test_data_list, train_class_list,\
+    test_class_list = TextProcessing(folder_path, test_size=0.2)
+
+    # 创捷特殊词汇集
+    stopWordsFile = './stopwords_cn.txt'
+    stopWordsSet = wordSet(stopWordsFile)
+    # feature_words = wordsDict(cnt_words_list, 100, stopWordsSet)
+    # print(feature_words)
+
+    test_accuracy_list = []
+    deleteNs = range(0, 1000, 20)  # 删除高频词
+    for deleteN in deleteNs:
+        feature_words = wordsDict(cnt_words_list, deleteN, stopWordsSet)
+        train_feature_list, test_feature_list = Feature2Vec(train_data_list, test_data_list, feature_words)
+        test_accuracy = TextClassifer(train_feature_list, test_feature_list, train_class_list, test_class_list)
+        test_accuracy_list.append(test_accuracy)
+
+    plt.figure()
+    plt.plot(deleteNs, test_accuracy_list)
+    plt.title('Relations between deleteNs and test_accuracy')
+    plt.xlabel('deleteNs')
+    plt.ylabel('test_accuracy')
+    plt.show()
+
     exit()
+
